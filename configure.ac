@@ -175,6 +175,9 @@ AM_CONDITIONAL([ENABLE_DRM], [test x$with_platform = xdrm])
 AM_CONDITIONAL([ENABLE_RPI], [test x$with_platform = xrpi])
 AM_CONDITIONAL([ENABLE_BRCM], [test x$with_platform = xbrcm])
 
+if test "$ENABLE_DRM" = true; then
+  AC_DEFINE(ENABLE_DRM, 1, [enable drm ])
+fi
 
 WAYLANDLIB="-lwayland-server"
 AC_SUBST(WAYLANDLIB)
