@@ -21,7 +21,7 @@ include ${PKG_CONFIG_SYSROOT_DIR}/usr/include/platform_app.inc
 
 AUTOMAKE_OPTIONS = subdir-objects
 
-SUBDIRS = 
+SUBDIRS =
 
 REFSW_VERSION ?= refsw14.4
 
@@ -31,15 +31,16 @@ LIB_SUB_DIR= gstreamer-0.10
 
 AM_CFLAGS = -DUSE_WESTEROS $(NEXUS_CFLAGS) $(NXCLIENT_CFLAGS) -I$(ROCKFORD_TOP)/middleware/platform/nexus \
            -I$(ROCKFORD_TOP)/middleware/v3d/interface/khronos/include \
-           -I$(ROCKFORD_TOP)/middleware/v3d/interface/khronos/include/EGL 
+           -I$(ROCKFORD_TOP)/middleware/v3d/interface/khronos/include/EGL \
+		   -I${top_srcdir}/include
 
-AM_LDFLAGS = 
+
+AM_LDFLAGS =
 
 lib_LTLIBRARIES = libwesteros_gl.la
 
 libwesteros_gl_la_SOURCES = westeros-gl/westeros-gl.cpp
 
-libwesteros_gl_la_include_HEADERS = westeros-gl/westeros-gl.h
 libwesteros_gl_la_includedir = $(includedir)
 libwesteros_gl_la_CXXFLAGS= $(AM_CFLAGS)
 

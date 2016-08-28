@@ -19,25 +19,26 @@
 
 AUTOMAKE_OPTIONS = subdir-objects
 
-SUBDIRS = 
+SUBDIRS =
 
-AM_CFLAGS = 
+AM_CFLAGS =
 
-AM_LDFLAGS = 
+AM_LDFLAGS =
 
 lib_LTLIBRARIES = libwesteros_gl.la
 
 libwesteros_gl_la_SOURCES = westeros-gl/westeros-gl.cpp
 
-libwesteros_gl_la_include_HEADERS = westeros-gl/westeros-gl.h
 libwesteros_gl_la_includedir = $(includedir)
-libwesteros_gl_la_CXXFLAGS= $(AM_CFLAGS) -I=/usr/include/interface/vmcs_host/linux
+libwesteros_gl_la_CXXFLAGS= $(AM_CFLAGS) -I=/usr/include/interface/vmcs_host/linux \
+       -I${top_srcdir}/include
+
 
 libwesteros_gl_la_LDFLAGS= \
    $(AM_LDFLAGS)
 
 pkgconfigdir = $(libdir)/pkgconfig
-   
+
 distcleancheck_listfiles = *-libtool
 
 ## IPK Generation Support

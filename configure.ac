@@ -26,7 +26,7 @@ AC_CONFIG_SRCDIR([])
 AC_CONFIG_HEADERS([cfg/config.h])
 AC_CONFIG_MACRO_DIR([cfg])
 AC_CONFIG_AUX_DIR([cfg])
-AM_INIT_AUTOMAKE([foreign no-dist-gzip dist-bzip2 1.9])
+AM_INIT_AUTOMAKE([foreign no-dist-gzip dist-bzip2 subdir-objects 1.9])
 LT_INIT
 
 # Checks for programs.
@@ -51,7 +51,8 @@ GLEW_DETECTED=" "
 WAYLAND_EGL_DETECTED=" "
 ENABLE_XDG_V4=" "
 ENABLE_XDG_V5=" "
-
+GRAPHICS_PLATFORM="drm"
+ENABLE_DRM=" "
 # Checks for library functions.
 #Add the subdirectories to be considered for building.
 SUBDIRS=" "
@@ -70,10 +71,10 @@ PKG_CHECK_MODULES([EGL],[egl >= 0.0],[EGL_DETECTED=true],[EGL_DETECTED=false])
 PKG_CHECK_MODULES([GLESV2],[glesv2 >= 0.0],[GLESV2_DETECTED=true],[GLESV2_DETECTED=false])
 PKG_CHECK_MODULES([GLEW],[glew >= 0.0],[GLEW_DETECTED=true],[GLEW_DETECTED=false])
 
-AM_CONDITIONAL([HAVE_WAYLAND_EGL], [test x$WAYLAND_EGL_DETECTED = xtrue])              
-AM_CONDITIONAL([HAVE_EGL], [test x$EGL_DETECTED = xtrue])              
-AM_CONDITIONAL([HAVE_GLESV2], [test x$GLESV2_DETECTED = xtrue])              
-AM_CONDITIONAL([HAVE_GLEW], [test x$GLEW_DETECTED = xtrue])              
+AM_CONDITIONAL([HAVE_WAYLAND_EGL], [test x$WAYLAND_EGL_DETECTED = xtrue])
+AM_CONDITIONAL([HAVE_EGL], [test x$EGL_DETECTED = xtrue])
+AM_CONDITIONAL([HAVE_GLESV2], [test x$GLESV2_DETECTED = xtrue])
+AM_CONDITIONAL([HAVE_GLEW], [test x$GLEW_DETECTED = xtrue])
 
 AC_ARG_ENABLE([app],
               AS_HELP_STRING([--enable-app],[enable westeros app (default is no)]),
@@ -85,7 +86,7 @@ AC_ARG_ENABLE([app],
                 esac
               ],
               [echo "westeros app is disabled"])
-AM_CONDITIONAL([ENABLE_WESTEROS_APP], [test x$ENABLE_WESTEROS_APP = xtrue])              
+AM_CONDITIONAL([ENABLE_WESTEROS_APP], [test x$ENABLE_WESTEROS_APP = xtrue])
 
 AC_ARG_ENABLE([test],
               AS_HELP_STRING([--enable-test],[enable westeros_test (default is no)]),
@@ -97,7 +98,7 @@ AC_ARG_ENABLE([test],
                 esac
               ],
               [echo "westeros_test is disabled"])
-AM_CONDITIONAL([ENABLE_WESTEROS_TEST], [test x$ENABLE_WESTEROS_TEST = xtrue])              
+AM_CONDITIONAL([ENABLE_WESTEROS_TEST], [test x$ENABLE_WESTEROS_TEST = xtrue])
 
 AC_ARG_ENABLE([rendergl],
               AS_HELP_STRING([--enable-rendergl],[enable westeros opengl renderer (default is no)]),
@@ -109,7 +110,7 @@ AC_ARG_ENABLE([rendergl],
                 esac
               ],
               [echo "westeros opengl renderer is disabled"])
-AM_CONDITIONAL([ENABLE_WESTEROS_RENDERERGL], [test x$ENABLE_WESTEROS_RENDERERGL = xtrue])              
+AM_CONDITIONAL([ENABLE_WESTEROS_RENDERERGL], [test x$ENABLE_WESTEROS_RENDERERGL = xtrue])
 
 AC_ARG_ENABLE([sbprotocol],
               AS_HELP_STRING([--enable-sbprotocol],[enable westeros wl_sb protocol (default is no)]),
@@ -121,7 +122,7 @@ AC_ARG_ENABLE([sbprotocol],
                 esac
               ],
               [echo "westeros wl_sb protocol is disabled"])
-AM_CONDITIONAL([ENABLE_WESTEROS_SBPROTOCOL], [test x$ENABLE_WESTEROS_SBPROTOCOL = xtrue])              
+AM_CONDITIONAL([ENABLE_WESTEROS_SBPROTOCOL], [test x$ENABLE_WESTEROS_SBPROTOCOL = xtrue])
 
 AC_ARG_ENABLE([xdgv4],
               AS_HELP_STRING([--enable-xdgv4],[enable xdg_shell protocol v4 (default is no)]),
@@ -133,7 +134,7 @@ AC_ARG_ENABLE([xdgv4],
                 esac
               ],
               [echo "xdg_shell protocol v4 is disabled"])
-AM_CONDITIONAL([ENABLE_XDG_V4], [test x$ENABLE_XDG_V4 = xtrue])              
+AM_CONDITIONAL([ENABLE_XDG_V4], [test x$ENABLE_XDG_V4 = xtrue])
 
 AC_ARG_ENABLE([xdgv5],
               AS_HELP_STRING([--enable-xdgv5],[enable xdg_shell protocol v5 (default is no)]),
@@ -145,15 +146,47 @@ AC_ARG_ENABLE([xdgv5],
                 esac
               ],
               [echo "xdg_shell protocol v5 is disabled"])
-AM_CONDITIONAL([ENABLE_XDG_V5], [test x$ENABLE_XDG_V5 = xtrue])              
+AM_CONDITIONAL([ENABLE_XDG_V5], [test x$ENABLE_XDG_V5 = xtrue])
+
+AC_ARG_WITH(platform,
+      AS_HELP_STRING([--with-platform=@<:@drm|rpi|brcm@:>@]
+         [Select graphics platform]),
+         [],[with_platform="drm"])
+
+if test "x$with_platform" = "xdrm"; then
+  GRAPHICS_PLATFORM="drm"
+  AC_CONFIG_FILES(drm/Makefile)
+  AC_DEFINE(ENABLE_DRM, 1, [enable drm ])
+else
+if test "x$with_platform" = "xrpi"; then
+  GRAPHICS_PLATFORM="rpi"
+  AC_CONFIG_FILES(rpi/Makefile)
+else
+if test "x$with_platform" = "xbrcm"; then
+  GRAPHICS_PLATFORM="brcm"
+  AC_CONFIG_FILES(brcm/Makefile)
+else
+  AC_ERROR([Unknown graphics platform set.])
+fi
+fi
+fi
+
+AM_CONDITIONAL([ENABLE_DRM], [test x$with_platform = xdrm])
+AM_CONDITIONAL([ENABLE_RPI], [test x$with_platform = xrpi])
+AM_CONDITIONAL([ENABLE_BRCM], [test x$with_platform = xbrcm])
+
 
 WAYLANDLIB="-lwayland-server"
 AC_SUBST(WAYLANDLIB)
 
-AC_CONFIG_FILES([Makefile westeros-compositor.pc])
+AC_OUTPUT([Makefile simplebuffer/Makefile simpleshell/Makefile src/Makefile src/westeros-compositor.pc])
 AC_SUBST(WAYLAND_CFLAGS)
 AC_SUBST(GUPNP_VERSION)
 AC_SUBST(ENABLE_WESTEROS_APP)
 AC_SUBST(ENABLE_WESTEROS_TEST)
+
 AC_OUTPUT
 
+AC_MSG_RESULT([
+  Building with graphics platform......................[${with_platform}]
+])
