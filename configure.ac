@@ -26,7 +26,7 @@ AC_CONFIG_SRCDIR([])
 AC_CONFIG_HEADERS([cfg/config.h])
 AC_CONFIG_MACRO_DIR([cfg])
 AC_CONFIG_AUX_DIR([cfg])
-AM_INIT_AUTOMAKE([foreign no-dist-gzip dist-bzip2 1.9])
+AM_INIT_AUTOMAKE([foreign no-dist-gzip dist-bzip2 subdir-objects 1.9])
 LT_INIT
 
 # Checks for programs.
@@ -51,7 +51,7 @@ GLEW_DETECTED=" "
 WAYLAND_EGL_DETECTED=" "
 ENABLE_XDG_V4=" "
 ENABLE_XDG_V5=" "
-
+ENABLE_DRM=" "
 # Checks for library functions.
 #Add the subdirectories to be considered for building.
 SUBDIRS=" "
@@ -147,13 +147,27 @@ AC_ARG_ENABLE([xdgv5],
               [echo "xdg_shell protocol v5 is disabled"])
 AM_CONDITIONAL([ENABLE_XDG_V5], [test x$ENABLE_XDG_V5 = xtrue])              
 
+
+AC_ARG_ENABLE([drm],
+              AS_HELP_STRING([--enable-drm],[enable DRM (default is no)]),
+              [
+                case "${enableval}" in
+                 yes) ENABLE_DRM=true ; my_subdirs="$my_subdirs drm" ;;
+                  no) AC_MSG_ERROR([DRM is disabled]) ;;
+                   *) AC_MSG_ERROR([bad value ${enableval} for --enable-drm]) ;;
+                esac
+              ],
+              [echo "drm support is disabled"])
+AM_CONDITIONAL([ENABLE_DRM], [test x$ENABLE_DRM = xtrue])
+
+
 WAYLANDLIB="-lwayland-server"
 AC_SUBST(WAYLANDLIB)
 
-AC_CONFIG_FILES([Makefile westeros-compositor.pc])
+AC_OUTPUT([drm/Makefile Makefile simplebuffer/Makefile simpleshell/Makefile src/Makefile src/westeros-compositor.pc])
 AC_SUBST(WAYLAND_CFLAGS)
 AC_SUBST(GUPNP_VERSION)
 AC_SUBST(ENABLE_WESTEROS_APP)
 AC_SUBST(ENABLE_WESTEROS_TEST)
-AC_OUTPUT
 
+AC_OUTPUT
