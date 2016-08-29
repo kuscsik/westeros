@@ -20,8 +20,6 @@
 
 #define CONNECTOR_ID 1;
 
-
-
 typedef struct _WstGLCtx
 {
     EGLDisplay dpy;
@@ -41,7 +39,6 @@ static int init_egl(WstGLCtx *glctx)
   EGLint major, minor;
 
   glctx->dpy = eglGetDisplay((NativeDisplayType) glctx->gbm);
-    
   if (!glctx->dpy)
     return -EINVAL;
 
@@ -54,7 +51,6 @@ static int init_egl(WstGLCtx *glctx)
     return -EINVAL;
 
   eglMakeCurrent(glctx->dpy, EGL_NO_SURFACE, EGL_NO_SURFACE, glctx->ctx);
-  
   return 0;
 }
 
@@ -142,9 +138,25 @@ void WstGLTerm( WstGLCtx *ctx ) {
 }
 
 
-void* WstGLCreateNativeWindow( WstGLCtx *ctx, int x, int y, int width, int height );
-void WstGLDestroyNativeWindow( WstGLCtx *ctx, void *nativeWindow );
-bool WstGLGetNativePixmap( WstGLCtx *ctx, void *nativeBuffer, void **nativePixmap );
-void WstGLGetNativePixmapDimensions( WstGLCtx *ctx, void *nativePixmap, int *width, int *height );
-void WstGLReleaseNativePixmap( WstGLCtx *ctx, void *nativePixmap );
-void* WstGLGetEGLNativePixmap( WstGLCtx *ctx, void *nativePixmap );
+void* WstGLCreateNativeWindow( WstGLCtx *ctx, int x, int y, int width, int height ) {
+    void* result = NULL;
+    return result;
+}
+void WstGLDestroyNativeWindow( WstGLCtx *ctx, void *nativeWindow ) {
+    return;
+}
+bool WstGLGetNativePixmap( WstGLCtx *ctx, void *nativeBuffer, void **nativePixmap ) {
+    bool result = false;
+
+    return result;
+}
+void WstGLGetNativePixmapDimensions( WstGLCtx *ctx, void *nativePixmap, int *width, int *height ) {
+
+}
+void WstGLReleaseNativePixmap( WstGLCtx *ctx, void *nativePixmap ) {
+}
+void* WstGLGetEGLNativePixmap( WstGLCtx *ctx, void *nativePixmap ) {
+    void* result = NULL;
+
+    return result;
+}

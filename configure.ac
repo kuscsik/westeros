@@ -160,6 +160,9 @@ AC_ARG_ENABLE([drm],
               [echo "drm support is disabled"])
 AM_CONDITIONAL([ENABLE_DRM], [test x$ENABLE_DRM = xtrue])
 
+if test "$ENABLE_DRM" = true; then
+  AC_DEFINE(ENABLE_DRM, 1, [enable drm ])
+fi
 
 WAYLANDLIB="-lwayland-server"
 AC_SUBST(WAYLANDLIB)

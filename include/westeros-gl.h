@@ -18,7 +18,17 @@
  */
 #ifndef _WESTEROS_GL_H
 #define _WESTEROS_GL_H
+#include "config.h"
 
+#if defined(__cplusplus) && defined(ENABLE_DRM)
+extern "C" {
+#endif
+
+/**
+ * Libraries using libdrm must be c libraries.
+ * To ensure we can link with c++ code we use
+ * extern "C" here.
+ */
 typedef struct _WstGLCtx WstGLCtx;
 
 WstGLCtx* WstGLInit();
@@ -30,5 +40,8 @@ void WstGLGetNativePixmapDimensions( WstGLCtx *ctx, void *nativePixmap, int *wid
 void WstGLReleaseNativePixmap( WstGLCtx *ctx, void *nativePixmap );
 void* WstGLGetEGLNativePixmap( WstGLCtx *ctx, void *nativePixmap );
 
+#if defined(__cplusplus) && defined(ENABLE_DRM)
+} //extern "C"
+#endif
 #endif
 

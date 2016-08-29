@@ -30,5 +30,7 @@ libwesteros_gl_la_includedir = $(includedir)
 libwesteros_gl_la_CXXFLAGS= $(AM_CFLAGS)
 
 libwesteros_gl_la_LDFLAGS= \
-   -lwayland-egl
+   -lwayland-egl \
+	 -ldrm \
+	 -lgbm
 
