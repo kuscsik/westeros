@@ -34,3 +34,16 @@ libwesteros_gl_la_LDFLAGS= \
 	 -ldrm \
 	 -lgbm
 
+
+bin_PROGRAMS = test_westeros_gl
+
+test_westeros_gl_SOURCES = test_westeros_gl.c
+test_westeros_gl_LDFLAGS = \
+													 $(AM_LDFLAGS) \
+													 -lgbm \
+													 -ldrm \
+													 -lEGL \
+													 -lGLESv2
+
+test_westeros_gl_LDADD = libwesteros_gl.la
+
