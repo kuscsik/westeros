@@ -20,6 +20,10 @@
 #define _WESTEROS_GL_H
 #include "config.h"
 
+#ifndef __cplusplus
+#include <stdbool.h>
+#endif
+
 #if defined(__cplusplus) && defined(ENABLE_DRM)
 extern "C" {
 #endif
