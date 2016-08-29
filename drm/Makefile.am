@@ -24,10 +24,13 @@ AM_CFLAGS = -DUSE_WESTEROS -I${top_srcdir}/include -I/usr/include/drm
 
 lib_LTLIBRARIES = libwesteros_gl.la
 
-libwesteros_gl_la_SOURCES = westeros-gl.c
+libwesteros_gl_la_SOURCES = westeros-gl.c \
+	drm_egl_utils.c
 
 libwesteros_gl_la_includedir = $(includedir)
 libwesteros_gl_la_CXXFLAGS= $(AM_CFLAGS)
+
+test_westeros_gl_LDADD = libwesteros_gl.la
 
 libwesteros_gl_la_LDFLAGS= \
    -lwayland-egl \
@@ -38,12 +41,12 @@ libwesteros_gl_la_LDFLAGS= \
 bin_PROGRAMS = test_westeros_gl
 
 test_westeros_gl_SOURCES = test_westeros_gl.c
-test_westeros_gl_LDFLAGS = \
-													 $(AM_LDFLAGS) \
-													 -lgbm \
-													 -ldrm \
-													 -lEGL \
-													 -lGLESv2
 
-test_westeros_gl_LDADD = libwesteros_gl.la
+test_westeros_gl_LDFLAGS =  \
+							$(AM_LDFLAGS) \
+							 -lgbm \
+							 -ldrm \
+							 -lEGL \
+							 -lGLESv2
 
+nobase_include_HEADERS = drm_egl_utils.h

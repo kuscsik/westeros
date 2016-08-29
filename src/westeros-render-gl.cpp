@@ -27,7 +27,7 @@
 #if defined (WESTEROS_PLATFORM_EMBEDDED) || defined (WESTEROS_HAVE_WAYLAND_EGL)
   #include <GLES2/gl2.h>
   #include <GLES2/gl2ext.h>
-#else  
+#else
   #include <GL/glew.h>
   #include <GL/gl.h>
 #endif
@@ -45,6 +45,7 @@
 #include "wayland-client.h"
 #include "wayland-egl.h"
 
+#include "config.h"
 #ifdef ENABLE_SBPROTOCOL
 #include "westeros-simplebuffer.h"
 #endif
@@ -56,7 +57,7 @@
 #ifdef WST_DEBUG
 #define INT_TRACE(FORMAT,...) printf( FORMAT "\n", __VA_ARGS__)
 #else
-#define INT_TRACE(FORMAT,...) 
+#define INT_TRACE(FORMAT,...)
 #endif
 
 #define WST_TRACE(...)  INT_TRACE(__VA_ARGS__, "")
@@ -122,8 +123,8 @@ typedef struct _WstShader
    GLuint textureUnit0;
    GLuint textureUnit1;
    GLuint alphaTextColorLocation;
-   GLuint maskAttribLocation[WST_MAX_MASK];   
-   GLuint maskUniformLocation[WST_MAX_MASK];   
+   GLuint maskAttribLocation[WST_MAX_MASK];
+   GLuint maskUniformLocation[WST_MAX_MASK];
 } WstShader;
 
 typedef struct _WstRenderContext
@@ -176,7 +177,7 @@ struct _WstRenderSurface
 
    GLfloat vertexCoords[4*2];
    GLfloat textureCoords[4*2];
-     
+
 };
 
 typedef struct _WstRendererGL
@@ -202,10 +203,10 @@ typedef struct _WstRendererGL
    #if defined (WESTEROS_PLATFORM_EMBEDDED)
    WstGLCtx *glCtx;
    #endif
-   
+
    EGLDisplay eglDisplay;
    EGLConfig eglConfig;
-   EGLContext eglContext;   
+   EGLContext eglContext;
    EGLSurface eglSurface;
 
    PFNEGLCREATEIMAGEKHRPROC eglCreateImageKHR;
@@ -220,7 +221,7 @@ typedef struct _WstRendererGL
    PFNEGLUNBINDWAYLANDDISPLAYWL eglUnbindWaylandDisplayWL;
    PFNEGLQUERYWAYLANDBUFFERWL eglQueryWaylandBufferWL;
    #endif
-   
+
    std::vector<WstRenderSurface*> surfaces;
 } WstRendererGL;
 
@@ -231,17 +232,17 @@ static void wstRenderGLDestroySurface( WstRendererGL *renderer, WstRenderSurface
 static void wstRendererGLFlushSurface( WstRendererGL *renderer, WstRenderSurface *surface );
 static void wstRendererGLCommitShm( WstRendererGL *rendererGL, WstRenderSurface *surface, struct wl_resource *resource );
 #if defined (WESTEROS_HAVE_WAYLAND_EGL)
-static void wstRendererGLCommitWaylandEGL( WstRendererGL *rendererGL, WstRenderSurface *surface, 
+static void wstRendererGLCommitWaylandEGL( WstRendererGL *rendererGL, WstRenderSurface *surface,
                                            struct wl_resource *resource, EGLint format );
 #endif
 #ifdef ENABLE_SBPROTOCOL
 static void wstRendererGLCommitSB( WstRendererGL *rendererGL, WstRenderSurface *surface, struct wl_resource *resource );
 #endif
 #if defined (WESTEROS_PLATFORM_RPI)
-static void wstRendererGLCommitDispmanx( WstRendererGL *rendererGL, WstRenderSurface *surface, 
+static void wstRendererGLCommitDispmanx( WstRendererGL *rendererGL, WstRenderSurface *surface,
                                          DISPMANX_RESOURCE_HANDLE_T dispResource,
                                          EGLint format, int bufferWidth, int bufferHeight );
-#endif                                         
+#endif
 static void wstRenderGLPrepareSurface( WstRendererGL *renderer, WstRenderContext *rctx, WstRenderSurface *surf );
 static void wstRenderGLRenderSurface( WstRendererGL *renderer, WstRenderContext *rctx, WstRenderSurface *surf );
 
@@ -259,19 +260,18 @@ static unsigned int wstCreateGLShader(const char *pShaderSource, bool isVertexSh
 static WstRendererGL* wstRendererGLCreate( WstRenderer *renderer )
 {
    WstRendererGL *rendererGL= 0;
-   
+
    rendererGL= (WstRendererGL*)calloc(1, sizeof(WstRendererGL) );
    if ( rendererGL )
    {
       rendererGL->outputWidth= renderer->outputWidth;
       rendererGL->outputHeight= renderer->outputHeight;
-      
+
       rendererGL->currentShaderClass= -1;
 
       #if defined (WESTEROS_PLATFORM_EMBEDDED)
       rendererGL->glCtx= WstGLInit();
       #endif
-      
       rendererGL->renderer= renderer;
       wstRenderGLSetupEGL( rendererGL );
 
@@ -285,7 +285,7 @@ static WstRendererGL* wstRendererGLCreate( WstRenderer *renderer )
       rendererGL->glEGLImageTargetTexture2DOES= (PFNGLEGLIMAGETARGETTEXTURE2DOESPROC)eglGetProcAddress("glEGLImageTargetTexture2DOES");
       printf( "glEGLImageTargetTexture2DOES %p\n", rendererGL->glEGLImageTargetTexture2DOES);
       #endif
-   
+
       #if defined (WESTEROS_HAVE_WAYLAND_EGL)
       const char *extensions= eglQueryString( rendererGL->eglDisplay, EGL_EXTENSIONS );
       if ( extensions )
@@ -297,7 +297,7 @@ static WstRendererGL* wstRendererGLCreate( WstRenderer *renderer )
          else
          {
             printf("wayland-egl support expected, and is advertised by eglQueryString(eglDisplay,EGL_EXTENSIONS): proceeding to use \n" );
-         
+
             rendererGL->eglBindWaylandDisplayWL= (PFNEGLBINDWAYLANDDISPLAYWL)eglGetProcAddress("eglBindWaylandDisplayWL");
             printf( "eglBindWaylandDisplayWL %p\n", rendererGL->eglBindWaylandDisplayWL );
 
@@ -306,7 +306,7 @@ static WstRendererGL* wstRendererGLCreate( WstRenderer *renderer )
 
             rendererGL->eglQueryWaylandBufferWL= (PFNEGLQUERYWAYLANDBUFFERWL)eglGetProcAddress("eglQueryWaylandBufferWL");
             printf( "eglQueryWaylandBufferWL %p\n", rendererGL->eglQueryWaylandBufferWL );
-            
+
             if ( rendererGL->eglBindWaylandDisplayWL &&
                  rendererGL->eglUnbindWaylandDisplayWL &&
                  rendererGL->eglQueryWaylandBufferWL )
@@ -330,17 +330,17 @@ static WstRendererGL* wstRendererGLCreate( WstRenderer *renderer )
       }
       printf("have wayland-egl: %d\n", rendererGL->haveWaylandEGL );
       #endif
-    
+
       // Get the number of texture units
       glGetIntegerv( GL_MAX_COMBINED_TEXTURE_IMAGE_UNITS, &rendererGL->maxTextureUnits );
       WST_TRACE( "WstRendererGL: WstRendererGLCreate: maxTextureUnits=%d\n", rendererGL->maxTextureUnits );
 
       rendererGL->shaderCacheSize= 4 *                // texture + textureYUV + fill + alphaText
-                                   2 *                // opacity on/off                        
+                                   2 *                // opacity on/off
                                    rendererGL->maxTextureUnits;
       rendererGL->shaderCache= (WstShader**)calloc( 1, rendererGL->shaderCacheSize*sizeof(WstShader*) );
       WST_TRACE( "WstRendererGL: WstRendererGLCreate: allocate cache for %d shader classes\n", rendererGL->shaderCacheSize );
-    
+
       // Initialize null shader
       rendererGL->nullShader.shaderClass.id= -1;
       rendererGL->nullShader.programId= GL_NONE;
@@ -369,7 +369,7 @@ static WstRendererGL* wstRendererGLCreate( WstRenderer *renderer )
       wstMatrixIdentity(rendererGL->modelview);
       wstMatrixTranslate(rendererGL->modelview, -rendererGL->outputWidth, -rendererGL->outputHeight, 0);
       wstMatrixIdentity(rendererGL->projection);
-      wstMatrixOrtho( rendererGL->projection, 
+      wstMatrixOrtho( rendererGL->projection,
                       0,                          //left
                       rendererGL->outputWidth,    //right
                       rendererGL->outputHeight,   //bottom
@@ -379,7 +379,7 @@ static WstRendererGL* wstRendererGLCreate( WstRenderer *renderer )
 
       wstMatrixMultMatrix(rendererGL->mvp, rendererGL->projection, rendererGL->modelview);
    }
-   
+
    return rendererGL;
 }
 
@@ -394,7 +394,7 @@ static void wstRendererGLDestroy( WstRendererGL *renderer )
          renderer->haveWaylandEGL= false;
       }
       #endif
-      
+
       if ( renderer->shaderCache )
       {
          WstShader *shader;
@@ -407,7 +407,7 @@ static void wstRendererGLDestroy( WstRendererGL *renderer )
                wstDestroyShader( renderer, shader );
                renderer->shaderCache[i]= 0;
             }
-       
+
          }
          free( renderer->shaderCache );
          renderer->shaderCache= 0;
@@ -417,13 +417,13 @@ static void wstRendererGLDestroy( WstRendererGL *renderer )
          free(renderer->activeTextureId);
          renderer->activeTextureId = 0;
       }
-      
+
       if ( renderer->eglSurface )
       {
          eglDestroySurface( renderer->eglDisplay, renderer->eglSurface );
          renderer->eglSurface= 0;
       }
-      
+
       // If we are doing nested composition destroy the wayland egl window
       // otherwise destroy the native egl window
       if ( renderer->renderer->displayNested )
@@ -442,7 +442,7 @@ static void wstRendererGLDestroy( WstRendererGL *renderer )
             WstGLDestroyNativeWindow( renderer->glCtx, renderer->nativeWindow );
             renderer->nativeWindow= 0;
          }
-         
+
          WstGLTerm( renderer->glCtx );
          renderer->glCtx= 0;
          #endif
@@ -456,7 +456,7 @@ static WstRenderSurface *wstRenderGLCreateSurface(WstRendererGL *renderer)
 {
     WstRenderSurface *surface= 0;
 
-    WST_UNUSED(renderer);   
+    WST_UNUSED(renderer);
     surface= (WstRenderSurface*)calloc( 1, sizeof(WstRenderSurface) );
     if ( surface )
     {
@@ -470,19 +470,19 @@ static WstRenderSurface *wstRenderGLCreateSurface(WstRendererGL *renderer)
         surface->visible= true;
         surface->opacity= 1.0;
         surface->zorder= 0.5;
-        
+
         wstMatrixIdentity(surface->transform);
-      
+
         surface->vertexCoordsDirty= 1;
         surface->texCoordsDirty= 1;
     }
-   
+
     return surface;
 }
 
 static void wstRenderGLDestroySurface( WstRendererGL *renderer, WstRenderSurface *surface )
 {
-    WST_UNUSED(renderer);    
+    WST_UNUSED(renderer);
     if ( surface )
     {
         wstRendererGLFlushSurface( renderer, surface );
@@ -539,9 +539,9 @@ static void wstRendererGLCommitShm( WstRendererGL *rendererGL, WstRenderSurface 
       width= wl_shm_buffer_get_width(shmBuffer);
       height= wl_shm_buffer_get_height(shmBuffer);
       stride= wl_shm_buffer_get_stride(shmBuffer);
-      
+
       // The SHM formats describe the structure of the color channels for a pixel as
-      // they would appear in a machine register not the byte order in memory.  For 
+      // they would appear in a machine register not the byte order in memory.  For
       // example WL_SHM_FORMAT_ARGB8888 is a 32 bit pixel with alpha in the 8 most significant
       // bits and blue in the 8 list significant bits.  On a little endian machine the
       // byte order in memory would be B, G, R, A.
@@ -662,7 +662,7 @@ static void wstRendererGLCommitShm( WstRendererGL *rendererGL, WstRenderSurface 
       {
          wl_shm_buffer_begin_access(shmBuffer);
          data= wl_shm_buffer_get_data(shmBuffer);
-         
+
          if ( surface->mem &&
               (
                 (surface->memWidth != width) ||
@@ -683,7 +683,7 @@ static void wstRendererGLCommitShm( WstRendererGL *rendererGL, WstRenderSurface 
          if ( surface->mem )
          {
             memcpy( surface->mem, data, stride*height );
-            
+
             if ( transformPixelsA )
             {
                // transform ARGB to RGBA
@@ -732,7 +732,7 @@ static void wstRendererGLCommitShm( WstRendererGL *rendererGL, WstRenderSurface 
                   }
                }
             }
-            
+
             surface->bufferWidth= width;
             surface->bufferHeight= height;
             surface->memWidth= width;
@@ -740,15 +740,15 @@ static void wstRendererGLCommitShm( WstRendererGL *rendererGL, WstRenderSurface 
             surface->memFormatGL= formatGL;
             surface->memType= type;
             surface->memDirty= true;
-         }      
-         
+         }
+
          wl_shm_buffer_end_access(shmBuffer);
       }
    }
 }
 
 #if defined (WESTEROS_HAVE_WAYLAND_EGL)
-static void wstRendererGLCommitWaylandEGL( WstRendererGL *rendererGL, WstRenderSurface *surface, 
+static void wstRendererGLCommitWaylandEGL( WstRendererGL *rendererGL, WstRenderSurface *surface,
                                            struct wl_resource *resource, EGLint format )
 {
    EGLImageKHR eglImage= 0;
@@ -762,7 +762,7 @@ static void wstRendererGLCommitWaylandEGL( WstRendererGL *rendererGL, WstRenderS
                                                         &value ) )
    {
       bufferWidth= value;
-   }                                                        
+   }
 
    if (EGL_TRUE == rendererGL->eglQueryWaylandBufferWL( rendererGL->eglDisplay,
                                                         resource,
@@ -770,8 +770,8 @@ static void wstRendererGLCommitWaylandEGL( WstRendererGL *rendererGL, WstRenderS
                                                         &value ) )
    {
       bufferHeight= value;
-   }                                                        
-   
+   }
+
    if ( (surface->bufferWidth != bufferWidth) || (surface->bufferHeight != bufferHeight) )
    {
       surface->bufferWidth= bufferWidth;
@@ -790,7 +790,7 @@ static void wstRendererGLCommitWaylandEGL( WstRendererGL *rendererGL, WstRenderS
    }
 
    #if defined (WESTEROS_PLATFORM_RPI)
-   /* 
+   /*
     * The Userland wayland-egl implementation used on RPI isn't complete in that it does not
     * support the use of eglCreateImageKHR using the wl_buffer resource and target EGL_WAYLAND_BUFFER_WL.
     * For that reason we need to supply a different path for handling buffers received via
@@ -829,18 +829,18 @@ static void wstRendererGLCommitWaylandEGL( WstRendererGL *rendererGL, WstRenderS
             surface->textureCount= 1;
          }
          break;
-      
+
       case EGL_TEXTURE_Y_U_V_WL:
          printf("wstRendererGLCommitWaylandEGL: EGL_TEXTURE_Y_U_V_WL not supported\n" );
          break;
-       
+
       case EGL_TEXTURE_Y_UV_WL:
          attrList[0]= EGL_WAYLAND_PLANE_WL;
          attrList[2]= EGL_NONE;
          for( int i= 0; i < 2; ++i )
          {
             attrList[1]= i;
-            
+
             eglImage= rendererGL->eglCreateImageKHR( rendererGL->eglDisplay,
                                                      EGL_NO_CONTEXT,
                                                      EGL_WAYLAND_BUFFER_WL,
@@ -859,11 +859,11 @@ static void wstRendererGLCommitWaylandEGL( WstRendererGL *rendererGL, WstRenderS
          }
          surface->textureCount= 2;
          break;
-         
+
       case EGL_TEXTURE_Y_XUXV_WL:
          printf("wstRendererGLCommitWaylandEGL: EGL_TEXTURE_Y_XUXV_WL not supported\n" );
          break;
-         
+
       default:
          printf("wstRendererGLCommitWaylandEGL: unknown texture format: %x\n", format );
          break;
@@ -881,11 +881,11 @@ static void wstRendererGLCommitSB( WstRendererGL *rendererGL, WstRenderSurface *
    struct wl_sb_buffer *sbBuffer;
    void *deviceBuffer;
    int bufferWidth, bufferHeight;
-   
+
    #if defined WESTEROS_PLATFORM_RPI
    int sbFormat;
    EGLint format= EGL_NONE;
-   
+
    sbBuffer= WstSBBufferGet( resource );
    if ( sbBuffer )
    {
@@ -893,7 +893,7 @@ static void wstRendererGLCommitSB( WstRendererGL *rendererGL, WstRenderSurface *
       if ( deviceBuffer )
       {
          DISPMANX_RESOURCE_HANDLE_T dispResource= (DISPMANX_RESOURCE_HANDLE_T)deviceBuffer;
-         
+
          bufferWidth= WstSBBufferGetWidth( sbBuffer );
          bufferHeight= WstSBBufferGetHeight( sbBuffer );
          sbFormat= WstSBBufferGetFormat( sbBuffer );
@@ -904,7 +904,7 @@ static void wstRendererGLCommitSB( WstRendererGL *rendererGL, WstRenderSurface *
                format= EGL_TEXTURE_RGBA;
                break;
          }
-         
+
          if ( format != EGL_NONE )
          {
             wstRendererGLCommitDispmanx( rendererGL, surface, dispResource, format, bufferWidth, bufferHeight );
@@ -915,7 +915,7 @@ static void wstRendererGLCommitSB( WstRendererGL *rendererGL, WstRenderSurface *
    EGLNativePixmapType eglPixmap= 0;
    EGLImageKHR eglImage= 0;
    bool resize= false;
-   
+
    sbBuffer= WstSBBufferGet( resource );
    if ( sbBuffer )
    {
@@ -936,7 +936,7 @@ static void wstRendererGLCommitSB( WstRendererGL *rendererGL, WstRenderSurface *
                surface->vertexCoordsDirty= 1;
                resize= true;
             }
-            
+
             if ( resize || (eglPixmap != (EGLNativePixmapType) WstGLGetEGLNativePixmap(rendererGL->glCtx, surface->nativePixmap)) )
             {
                /*
@@ -985,7 +985,7 @@ static void wstRendererGLCommitSB( WstRendererGL *rendererGL, WstRenderSurface *
 #endif
 
 #if defined (WESTEROS_PLATFORM_RPI)
-static void wstRendererGLCommitDispmanx( WstRendererGL *rendererGL, WstRenderSurface *surface, 
+static void wstRendererGLCommitDispmanx( WstRendererGL *rendererGL, WstRenderSurface *surface,
                                          DISPMANX_RESOURCE_HANDLE_T dispResource,
                                          EGLint format, int bufferWidth, int bufferHeight )
 {
@@ -1025,7 +1025,7 @@ static void wstRendererGLCommitDispmanx( WstRendererGL *rendererGL, WstRenderSur
                {
                   VC_RECT_T rect;
                   int result;
-                  
+
                   rect.x= 0;
                   rect.y= 0;
                   rect.width= bufferWidth;
@@ -1045,22 +1045,22 @@ static void wstRendererGLCommitDispmanx( WstRendererGL *rendererGL, WstRenderSur
                      surface->memType= type;
                      surface->memDirty= true;
                   }
-               }            
+               }
             }
             break;
-         
+
          case EGL_TEXTURE_Y_U_V_WL:
             printf("wstRendererGLCommitDispmanx: EGL_TEXTURE_Y_U_V_WL not supported\n" );
             break;
-          
+
          case EGL_TEXTURE_Y_UV_WL:
             printf("wstRendererGLCommitDispmanx: EGL_TEXTURE_Y_UV_WL not supported\n" );
             break;
-            
+
          case EGL_TEXTURE_Y_XUXV_WL:
             printf("wstRendererGLCommitDispmanx: EGL_TEXTURE_Y_XUXV_WL not supported\n" );
             break;
-            
+
          default:
             printf("wstRendererGLCommitDispmanx: unknown texture format: %x\n", format );
             break;
@@ -1099,11 +1099,11 @@ static void wstRenderGLPrepareSurface( WstRendererGL *renderer, WstRenderContext
           surf->clip[1]= rctx->clip[1];
           surf->clip[2]= rctx->clip[2];
           surf->clip[3]= rctx->clip[3];
-          
+
           vcupdate= 1;
           tcupdate= 1;
        }
-       
+
        if ( (surf->textureId[0] == GL_NONE) || surf->memDirty )
        {
            for ( int i= 0; i < surf->textureCount; ++i )
@@ -1113,7 +1113,7 @@ static void wstRenderGLPrepareSurface( WstRendererGL *renderer, WstRenderContext
                  glGenTextures(1, &surf->textureId[i] );
                  WST_TRACE("WstPrepareSurface: surf %p surface textureId=%d\n", surf, surf->textureId[i] );
               }
-             
+
               /* Bind the egl image as a texture */
               glActiveTexture(GL_TEXTURE0+i);
               glBindTexture(GL_TEXTURE_2D, surf->textureId[i] );
@@ -1152,7 +1152,7 @@ static void wstRenderGLPrepareSurface( WstRendererGL *renderer, WstRenderContext
        {
            surf->width= surf->bufferWidth;
            surf->height= surf->bufferHeight;
-                      
+
            itemShaderClass.bits.type= (surf->textureCount == 1) ? WstShaderType_texture : WstShaderType_textureYUV;
            itemShaderClass.bits.opacity= 0;
            itemShaderClass.bits.unused= 0;
@@ -1162,21 +1162,21 @@ static void wstRenderGLPrepareSurface( WstRendererGL *renderer, WstRenderContext
            {
                wstSetCurrentShader( renderer, itemShaderClass.id );
            }
-           
+
            surf->vertexLocation= renderer->currentShader->vertexLocation;
            WST_TRACE("surface vertexLocation %d\n", surf->vertexLocation);
        }
-       
+
        vertexCoords= surf->vertexCoords;
 
-       if ( surf->vertexCoordsDirty ) 
+       if ( surf->vertexCoordsDirty )
        {
            vcupdate= 1;
            tcupdate= 1;
        }
 
        txmin= tymin= 0.0f;
-       txmax= tymax= 1.0f;            
+       txmax= tymax= 1.0f;
 
        if ( vcupdate )
        {
@@ -1209,7 +1209,7 @@ static void wstRenderGLPrepareSurface( WstRendererGL *renderer, WstRenderContext
                isOnScreen = true;
            }
            else
-           {                                    
+           {
                if ((int)x1 == (int)x4 && (int)x2 == (int)x3)//rectangle
                {
                    float left = x1;
@@ -1219,10 +1219,10 @@ static void wstRenderGLPrepareSurface( WstRendererGL *renderer, WstRenderContext
 
                    if(right < clipLeft || left > clipRight || bottom < clipTop || top > clipBottom)
                        isOnScreen = false;
-                   else 
+                   else
                        isOnScreen = true;
-               }	
-               else 
+               }
+               else
                {
                    isOnScreen = (
                           (((x1 >= clipLeft) && (y1 >= clipTop)) && ((x1 < clipRight) && (y1 < clipBottom))) ||
@@ -1237,7 +1237,7 @@ static void wstRenderGLPrepareSurface( WstRendererGL *renderer, WstRenderContext
            if (isOnScreen)
            {
                surf->onScreen= 1;
-                     
+
                if ( rctx->cpuClip )
                {
                    float ox1= x1;
@@ -1250,19 +1250,19 @@ static void wstRenderGLPrepareSurface( WstRendererGL *renderer, WstRenderContext
                        if ( ow ) txmin= (clipLeft-ox1)/ow;
                        x1= clipLeft;
                    }
-                   if ( x2 > clipRight ) x2= clipRight;                      
+                   if ( x2 > clipRight ) x2= clipRight;
                    if ( x3 > clipRight )
                    {
                        if ( ow ) txmax= (clipRight-ox1)/ow;
                        x3= clipRight;
                    }
-                   if ( x4 < clipLeft ) x4= clipLeft;                      
+                   if ( x4 < clipLeft ) x4= clipLeft;
                    if ( y1 < clipTop )
                    {
                        if ( oh ) tymin= (clipTop-oy1)/oh;
                        y1= clipTop;
                    }
-                   if ( y2 < clipTop ) y2= clipTop;                      
+                   if ( y2 < clipTop ) y2= clipTop;
                    if ( y3 > clipBottom )
                    {
                        if ( oh ) tymax= (clipBottom-oy1)/oh;
@@ -1287,7 +1287,7 @@ static void wstRenderGLPrepareSurface( WstRendererGL *renderer, WstRenderContext
                surf->onScreen= 0;
            }
        }
-       
+
        if ( tcupdate )
        {
            GLfloat *textureCoords;
@@ -1305,14 +1305,14 @@ static void wstRenderGLPrepareSurface( WstRendererGL *renderer, WstRenderContext
               tymin= 1.0f-tymin;
               tymax= 1.0f-tymax;
            }
-           
+
            textureCoords[0]= txmin;
            textureCoords[1]= tymin;
            textureCoords[2]= txmax;
            textureCoords[3]= tymin;
            textureCoords[4]= txmax;
            textureCoords[5]= tymax;
-           textureCoords[6]= txmin;	
+           textureCoords[6]= txmin;
            textureCoords[7]= tymax;
        }
     }
@@ -1347,17 +1347,17 @@ static void wstRenderGLRenderSurface( WstRendererGL *renderer, WstRenderContext 
               glUniform1f( renderer->currentShader->opacityLocation, opacity );
            }
            WST_TRACE("WstRenderSurface: vertices: (%f,%f), (%f,%f), (%f,%f), (%f,%f)",
-                      surf->vertexCoords[0], surf->vertexCoords[1], 
-                      surf->vertexCoords[2], surf->vertexCoords[3], 
-                      surf->vertexCoords[4], surf->vertexCoords[5], 
+                      surf->vertexCoords[0], surf->vertexCoords[1],
+                      surf->vertexCoords[2], surf->vertexCoords[3],
+                      surf->vertexCoords[4], surf->vertexCoords[5],
                       surf->vertexCoords[6], surf->vertexCoords[7] );
            glVertexAttribPointer(surf->vertexLocation, 2, GL_FLOAT, GL_FALSE, 0, surf->vertexCoords);
            WST_TRACE("WstRenderSurface: enable vertex attrib array %d", surf->vertexLocation);
            glEnableVertexAttribArray(surf->vertexLocation);
            WST_TRACE("WstRenderSurface: texcoords: (%f,%f), (%f,%f), (%f,%f), (%f,%f)",
-                      surf->textureCoords[0], surf->textureCoords[1], 
-                      surf->textureCoords[2], surf->textureCoords[3], 
-                      surf->textureCoords[4], surf->textureCoords[5], 
+                      surf->textureCoords[0], surf->textureCoords[1],
+                      surf->textureCoords[2], surf->textureCoords[3],
+                      surf->textureCoords[4], surf->textureCoords[5],
                       surf->textureCoords[6], surf->textureCoords[7] );
            glVertexAttribPointer(surf->textureLocation[0], 2, GL_FLOAT, GL_FALSE, 0, surf->textureCoords);
            WST_TRACE("WstRenderSurface: enable texture attrib array %d", surf->textureLocation[0]);
@@ -1421,7 +1421,7 @@ static bool wstRenderGLSetupEGL( WstRendererGL *renderer )
    EGLint redSize, greenSize, blueSize, alphaSize, depthSize;
    EGLint ctxAttrib[3];
    int i;
-   
+
    if ( renderer->renderer->displayNested )
    {
       // Get EGL display from wayland display
@@ -1429,7 +1429,6 @@ static bool wstRenderGLSetupEGL( WstRendererGL *renderer )
    }
    else
    {
-      // Get default EGL display
       renderer->eglDisplay= eglGetDisplay(EGL_DEFAULT_DISPLAY);
    }
    printf("wstRenderGLSetupEGL: eglDisplay=%p\n", renderer->eglDisplay );
@@ -1456,7 +1455,7 @@ static bool wstRenderGLSetupEGL( WstRendererGL *renderer )
       goto exit;
    }
    printf("wstRendererGLSetupEGL: Number of EGL configurations: %d\n", configCount );
-    
+
    eglConfigs= (EGLConfig*)malloc( configCount*sizeof(EGLConfig) );
    if ( !eglConfigs )
    {
@@ -1480,7 +1479,7 @@ static bool wstRenderGLSetupEGL( WstRendererGL *renderer )
    attr[i++]= EGL_RENDERABLE_TYPE;
    attr[i++]= EGL_OPENGL_ES2_BIT;
    attr[i++]= EGL_NONE;
-    
+
    // Get a list of configurations that meet or exceed our requirements
    b= eglChooseConfig( renderer->eglDisplay, attr, eglConfigs, configCount, &configCount );
    if ( !b )
@@ -1489,7 +1488,7 @@ static bool wstRenderGLSetupEGL( WstRendererGL *renderer )
       goto exit;
    }
    printf("wstRendererGLSetupEGL: eglChooseConfig: matching configurations: %d\n", configCount );
-    
+
    // Choose a suitable configuration
    for( i= 0; i < configCount; ++i )
    {
@@ -1499,6 +1498,8 @@ static bool wstRenderGLSetupEGL( WstRendererGL *renderer )
       eglGetConfigAttrib( renderer->eglDisplay, eglConfigs[i], EGL_ALPHA_SIZE, &alphaSize );
       eglGetConfigAttrib( renderer->eglDisplay, eglConfigs[i], EGL_DEPTH_SIZE, &depthSize );
 
+      printf("expected config %d: red: %d green: %d blue: %d alpha: %d depth: %d\n",
+              i, RED_SIZE, EGL_GREEN_SIZE, EGL_BLUE_SIZE, EGL_ALPHA_SIZE, EGL_DEPTH_SIZE );
       printf("config %d: red: %d green: %d blue: %d alpha: %d depth: %d\n",
               i, redSize, greenSize, blueSize, alphaSize, depthSize );
       if ( (redSize == RED_SIZE) &&
@@ -1511,22 +1512,30 @@ static bool wstRenderGLSetupEGL( WstRendererGL *renderer )
          break;
       }
    }
-   if ( i == configCount )
+   if (configCount == 0)
    {
       printf("wstRendererGLSetupEGL: no suitable configuration available\n");
       goto exit;
    }
+
+    if(i == configCount){
+      printf("wstRendererGLSetupEGL: using the first config\n");
+      i = 1;
+    }
+
    renderer->eglConfig= eglConfigs[i];
 
    // If we are doing nested composition, create a wayland egl window otherwise
    // create a native egl window.
    if ( renderer->renderer->displayNested )
    {
-      renderer->nativeWindow= wl_egl_window_create(renderer->renderer->surfaceNested, renderer->outputWidth, renderer->outputHeight);         
+      printf("--------- we are nested ------ \n");
+      renderer->nativeWindow= wl_egl_window_create(renderer->renderer->surfaceNested, renderer->outputWidth, renderer->outputHeight);
    }
    #if defined (WESTEROS_PLATFORM_EMBEDDED)
    else
    {
+       printf("---------- Calling WstGLCreateNativeWindow ------- \n");
       renderer->nativeWindow= WstGLCreateNativeWindow( renderer->glCtx, 0, 0, renderer->outputWidth, renderer->outputHeight );
    }
    #else
@@ -1535,16 +1544,18 @@ static bool wstRenderGLSetupEGL( WstRendererGL *renderer )
       renderer->nativeWindow= renderer->renderer->nativeWindow;
    }
    #endif
+
+   printf("Using width = %d  and height %d\n", renderer->outputWidth, renderer->outputHeight);
    printf("nativeWindow %p\n", renderer->nativeWindow );
 
    if ( renderer->nativeWindow )
    {
       // Create an EGL window surface
-      renderer->eglSurface= eglCreateWindowSurface( renderer->eglDisplay, 
-                                                    renderer->eglConfig, 
+      renderer->eglSurface= eglCreateWindowSurface( renderer->eglDisplay,
+                                                    renderer->eglConfig,
                                                     (EGLNativeWindowType)renderer->nativeWindow,
                                                     NULL );
-      printf("wstRenderGLSetupEGL: eglSurface %p\n", renderer->eglSurface );
+      printf("wstRenderGLSetupEGL: eglSurface %p eglError: %x\n", renderer->eglSurface, eglGetError());
    }
 
    ctxAttrib[0]= EGL_CONTEXT_CLIENT_VERSION;
@@ -1561,9 +1572,9 @@ static bool wstRenderGLSetupEGL( WstRendererGL *renderer )
    printf("wstRendererGLSetupEGL: eglContext %p\n", renderer->eglContext );
 
    eglMakeCurrent( renderer->eglDisplay, renderer->eglSurface, renderer->eglSurface, renderer->eglContext );
-   
+
    eglSwapInterval( renderer->eglDisplay, 1 );
-   
+
    result= true;
 
 exit:
@@ -1587,9 +1598,9 @@ static void wstMatrixIdentity(float matrix[16])
     if (matrix)
     {
         memset( matrix, 0, 16*sizeof(float) );
-    
+
         matrix[0]= 1.0f;
-        matrix[5]= 1.0f; 
+        matrix[5]= 1.0f;
         matrix[10]= 1.0f;
         matrix[15]= 1.0f;
     }
@@ -1602,7 +1613,7 @@ static void wstMatrixMultMatrix(float matrix[16], float in1[16], float in2[16])
 {
     int i= 0;
 
-    /* in1 or in2 also could be the result matrix so a, 
+    /* in1 or in2 also could be the result matrix so a,
        working matrix temp[16] is used to store the result */
     float temp[16];
 
@@ -1654,12 +1665,12 @@ static void wstMatrixOrtho(float matrix[16], float left, float right, float bott
     float temp[16] = { 1.0f, 0.0f, 0.0f, 0.0f,
                        0.0f, 1.0f, 0.0f, 0.0f,
                        0.0f, 0.0f, 1.0f, 0.0f,
-                       0.0f, 0.0f, 0.0f, 1.0f };                
-   
+                       0.0f, 0.0f, 0.0f, 1.0f };
+
     if (matrix)
-    { 
-        if ( (left != right) && 
-             (bottom != top) && 
+    {
+        if ( (left != right) &&
+             (bottom != top) &&
              (near != far) )
         {
             temp[12]= ((right + left) / (right - left));
@@ -1717,7 +1728,7 @@ static WstShader *wstGetShaderForClass( WstRendererGL *renderer, int shaderClass
       renderer->shaderCache[cacheIndex]= shader;
    }
 
-   return shader;   
+   return shader;
 }
 
 #define WST_MAX_SHADER_SOURCE_SIZE 1024
@@ -1731,7 +1742,7 @@ static WstShader *wstGetShaderForClass( WstRendererGL *renderer, int shaderClass
    #define WST_SHADER_PRECISION "mediump"
 #else
    #define WST_SHADER_PRECISION " "
-#endif   
+#endif
 
 // ----------------------------------------------------------------------------
 // Create a shader program for the specified shader class
@@ -1746,7 +1757,7 @@ static WstShader* wstCreateShaderForClass( WstShaderClass shaderClass )
    GLuint vertexShaderId= GL_NONE, fragmentShaderId= GL_NONE;
    GLuint programId= GL_NONE;
    GLuint attribIndex;
-   int shaderStatus = GL_FALSE; 
+   int shaderStatus = GL_FALSE;
    int infoLen;
    char infoLog[MAX_LOG_SIZE+1];
 
@@ -1756,7 +1767,7 @@ static WstShader* wstCreateShaderForClass( WstShaderClass shaderClass )
    {
       WST_TRACE("Not enough memory to allocate shader for class %X\n", shaderClass.id );
       return shaderNew;
-   } 
+   }
 
    // Generate shader programs
    shaderSource= (char*)malloc( WST_MAX_SHADER_SOURCE_SIZE );
@@ -1877,7 +1888,7 @@ static WstShader* wstCreateShaderForClass( WstShaderClass shaderClass )
          EMIT( ";\n" );
       }
 
-      if ( (shaderClass.bits.type == WstShaderType_texture) || 
+      if ( (shaderClass.bits.type == WstShaderType_texture) ||
            (shaderClass.bits.type == WstShaderType_alphaText) )
       {
          EMIT( "uniform sampler2D texture;\n" );
@@ -1908,7 +1919,7 @@ static WstShader* wstCreateShaderForClass( WstShaderClass shaderClass )
 
       EMIT( "void main(void) {\n" );
 
-      if ( (shaderClass.bits.type == WstShaderType_texture) || 
+      if ( (shaderClass.bits.type == WstShaderType_texture) ||
            (shaderClass.bits.type == WstShaderType_alphaText) )
       {
          EMIT( "   " WST_SHADER_PRECISION " vec4 texcolor = texture2D(texture, texcoord);\n" );
@@ -1977,7 +1988,7 @@ static WstShader* wstCreateShaderForClass( WstShaderClass shaderClass )
    {
        // Create Program
        programId = glCreateProgram();
-       WST_TRACE("shader class %X programId=%d vertexShaderId=%d fragmentShaderId=%d\n", 
+       WST_TRACE("shader class %X programId=%d vertexShaderId=%d fragmentShaderId=%d\n",
                    shaderClass.id, programId, vertexShaderId, fragmentShaderId );
 
        glAttachShader(programId, vertexShaderId);
@@ -2010,7 +2021,7 @@ static WstShader* wstCreateShaderForClass( WstShaderClass shaderClass )
        }
        else
        {
-           glValidateProgram(programId); 
+           glValidateProgram(programId);
            glGetProgramiv(programId, GL_VALIDATE_STATUS, &shaderStatus);
            if (shaderStatus != GL_TRUE)
            {
@@ -2070,9 +2081,9 @@ static WstShader* wstCreateShaderForClass( WstShaderClass shaderClass )
 
            #ifdef WST_DEBUG
            WST_TRACE("shader %p created for class %X:", shaderNew, shaderNew->shaderClass.id );
-           WST_TRACE("programId=%d vertexShaderId=%d fragmentShaderId=%d", 
+           WST_TRACE("programId=%d vertexShaderId=%d fragmentShaderId=%d",
                      shaderNew->programId, shaderNew->vertexShaderId, shaderNew->fragmentShaderId );
-           WST_TRACE("vertexLocation= %d textureLocation[0]=%d textureLocation[1]=%d fillColorLocation=%d mvpLocation= %d", 
+           WST_TRACE("vertexLocation= %d textureLocation[0]=%d textureLocation[1]=%d fillColorLocation=%d mvpLocation= %d",
                      shaderNew->vertexLocation, shaderNew->textureLocation[0], shaderNew->textureLocation[1],
                      shaderNew->fillColorLocation, shaderNew->mvpLocation );
            if ( shaderNew->shaderClass.bits.opacity )
@@ -2166,7 +2177,7 @@ static unsigned int wstCreateGLShader(const char *pShaderSource, bool isVertexSh
             fprintf(stderr,"Error: Failed to create %s Shader\n", isVertexShader ? "vertex" : "fragment");
             return 0;
         }
-        
+
         glShaderSource(shaderId, 1, (const char **)&pShaderSource, &shaderSourceLen);
         glCompileShader(shaderId);
 
@@ -2186,7 +2197,7 @@ static unsigned int wstCreateGLShader(const char *pShaderSource, bool isVertexSh
             fprintf(stderr, "%s\n",log);
         }
     }
-    
+
     return shaderId;
 }
 
@@ -2211,11 +2222,11 @@ static void wstRendererUpdateScene( WstRenderer *renderer )
    {
       rendererGL->outputWidth= renderer->outputWidth;
       rendererGL->outputHeight= renderer->outputHeight;
-      
+
       wstMatrixIdentity(rendererGL->modelview);
       wstMatrixTranslate(rendererGL->modelview, -rendererGL->outputWidth, -rendererGL->outputHeight, 0);
       wstMatrixIdentity(rendererGL->projection);
-      wstMatrixOrtho( rendererGL->projection, 
+      wstMatrixOrtho( rendererGL->projection,
                       0,                          //left
                       rendererGL->outputWidth,    //right
                       rendererGL->outputHeight,   //bottom
@@ -2226,17 +2237,17 @@ static void wstRendererUpdateScene( WstRenderer *renderer )
       wstMatrixMultMatrix(rendererGL->mvp, rendererGL->projection, rendererGL->modelview);
    }
 
-   eglMakeCurrent( rendererGL->eglDisplay, 
-                   rendererGL->eglSurface, 
-                   rendererGL->eglSurface, 
+   eglMakeCurrent( rendererGL->eglDisplay,
+                   rendererGL->eglSurface,
+                   rendererGL->eglSurface,
                    rendererGL->eglContext );
-   
+
    mvp= rendererGL->mvp;
-   
+
    glViewport( 0, 0, renderer->outputWidth, renderer->outputHeight );
    glClearColor( 0.0, 0.0, 0.0, 0.0 );
    glClear( GL_COLOR_BUFFER_BIT );
-   
+
    glDisable(GL_BLEND);
    glBlendColor(0,0,0,0);
    glActiveTexture(GL_TEXTURE0);
@@ -2245,18 +2256,18 @@ static void wstRendererUpdateScene( WstRenderer *renderer )
    glDisable(GL_CULL_FACE);
    glDisable(GL_SCISSOR_TEST);
    glBlendFuncSeparate( GL_ONE, GL_ONE_MINUS_SRC_ALPHA, GL_ONE, GL_ONE );
-   
+
    glUseProgram(rendererGL->currentShader->programId);
-   
+
    glUniformMatrix4fv(rendererGL->currentShader->mvpLocation, 1, GL_FALSE, mvp);
-   
+
    for( int i= 0; i < rendererGL->maxTextureUnits; ++i )
    {
       rendererGL->activeTextureId[i]= GL_NONE;
    }
-   
+
    rctx= &rendererGL->renderCtx;
-   
+
    rctx->opacity= 1.0f;
    rctx->z= ZSTART+ZINC;
    rctx->clip[0]= 0;
@@ -2267,19 +2278,19 @@ static void wstRendererUpdateScene( WstRenderer *renderer )
    rctx->transform= transform;
    transform[TCM11]= 1.0f;
    transform[TCM22]= 1.0f;
-   transform[TCM12]= transform[TCM21]= transform[TCMDX]= transform[TCMDY]= 0.0;   
-   
+   transform[TCM12]= transform[TCM21]= transform[TCMDX]= transform[TCMDY]= 0.0;
+
    rctx->cpuClip= ( (transform[TCM12] == 0.0) && (transform[TCM21] == 0.0) ) ? 1 : 0;
-   
+
    /*
     * Render surfaces from bottom to top
-    */   
+    */
    int imax= rendererGL->surfaces.size();
    for( int i= 0; i < imax; ++i )
    {
       WstRenderSurface *surface= rendererGL->surfaces[i];
-      
-      if ( surface->visible && 
+
+      if ( surface->visible &&
           (
             #if defined (WESTEROS_PLATFORM_EMBEDDED) || defined (WESTEROS_HAVE_WAYLAND_EGL)
             surface->eglImage[0] ||
@@ -2293,11 +2304,12 @@ static void wstRendererUpdateScene( WstRenderer *renderer )
          wstRenderGLRenderSurface( rendererGL, rctx, surface );
       }
    }
- 
+
    glFlush();
    glFinish();
 
    #if defined (WESTEROS_PLATFORM_EMBEDDED) || defined (WESTEROS_HAVE_WAYLAND_EGL)
+   printf("Swapping framebuffer\n");
    eglSwapBuffers(rendererGL->eglDisplay, rendererGL->eglSurface);
    #endif
 }
@@ -2308,7 +2320,7 @@ static WstRenderSurface* wstRendererSurfaceCreate( WstRenderer *renderer )
    WstRendererGL *rendererGL= (WstRendererGL*)renderer->renderer;
 
    surface= wstRenderGLCreateSurface(rendererGL);
-   
+
    std::vector<WstRenderSurface*>::iterator it= rendererGL->surfaces.begin();
    while ( it != rendererGL->surfaces.end() )
    {
@@ -2319,25 +2331,25 @@ static WstRenderSurface* wstRendererSurfaceCreate( WstRenderer *renderer )
       ++it;
    }
    rendererGL->surfaces.insert(it,surface);
-   
-   return surface; 
+
+   return surface;
 }
 
 static void wstRendererSurfaceDestroy( WstRenderer *renderer, WstRenderSurface *surface )
 {
    WstRendererGL *rendererGL= (WstRendererGL*)renderer->renderer;
 
-   for ( std::vector<WstRenderSurface*>::iterator it= rendererGL->surfaces.begin(); 
+   for ( std::vector<WstRenderSurface*>::iterator it= rendererGL->surfaces.begin();
          it != rendererGL->surfaces.end();
          ++it )
    {
       if ( (*it) == surface )
       {
          rendererGL->surfaces.erase(it);
-         break;   
+         break;
       }
-   }   
-   
+   }
+
    wstRenderGLDestroySurface( rendererGL, surface );
 }
 
@@ -2353,7 +2365,7 @@ static void wstRendererSurfaceCommit( WstRenderer *renderer, WstRenderSurface *s
          wstRendererGLCommitShm( rendererGL, surface, resource );
       }
       #if defined (WESTEROS_HAVE_WAYLAND_EGL)
-      else if ( rendererGL->haveWaylandEGL && 
+      else if ( rendererGL->haveWaylandEGL &&
                 (EGL_TRUE == rendererGL->eglQueryWaylandBufferWL( rendererGL->eglDisplay,
                                                                   resource,
                                                                   EGL_TEXTURE_FORMAT,
@@ -2397,17 +2409,17 @@ static bool wstRendererSurfaceGetVisible( WstRenderer *renderer, WstRenderSurfac
    if ( surface )
    {
       isVisible= surface->visible;
-      
+
       *visible= isVisible;
    }
-   
-   return isVisible;   
+
+   return isVisible;
 }
 
 static void wstRendererSurfaceSetGeometry( WstRenderer *renderer, WstRenderSurface *surface, int x, int y, int width, int height )
 {
    WstRendererGL *rendererGL= (WstRendererGL*)renderer->renderer;
-   
+
    if ( surface )
    {
       surface->x= x;
@@ -2434,7 +2446,7 @@ void wstRendererSurfaceGetGeometry( WstRenderer *renderer, WstRenderSurface *sur
 static void wstRendererSurfaceSetOpacity( WstRenderer *renderer, WstRenderSurface *surface, float opacity )
 {
    WstRendererGL *rendererGL= (WstRendererGL*)renderer->renderer;
-   
+
    if ( surface )
    {
       surface->opacity= opacity;
@@ -2445,36 +2457,36 @@ static float wstRendererSurfaceGetOpacity( WstRenderer *renderer, WstRenderSurfa
 {
    WstRendererGL *rendererGL= (WstRendererGL*)renderer->renderer;
    float opacityLevel= 1.0;
-   
+
    if ( surface )
    {
       opacityLevel= surface->opacity;
-      
+
       *opacity= opacityLevel;
    }
-   
+
    return opacityLevel;
 }
 
 static void wstRendererSurfaceSetZOrder( WstRenderer *renderer, WstRenderSurface *surface, float z )
 {
    WstRendererGL *rendererGL= (WstRendererGL*)renderer->renderer;
-   
+
    if ( surface )
    {
       surface->zorder= z;
 
       // Remove from surface list
-      for ( std::vector<WstRenderSurface*>::iterator it= rendererGL->surfaces.begin(); 
+      for ( std::vector<WstRenderSurface*>::iterator it= rendererGL->surfaces.begin();
             it != rendererGL->surfaces.end();
             ++it )
       {
          if ( (*it) == surface )
          {
             rendererGL->surfaces.erase(it);
-            break;   
+            break;
          }
-      }   
+      }
 
       // Re-insert in surface list based on new z-order
       std::vector<WstRenderSurface*>::iterator it= rendererGL->surfaces.begin();
@@ -2494,14 +2506,14 @@ static float wstRendererSurfaceGetZOrder( WstRenderer *renderer, WstRenderSurfac
 {
    WstRendererGL *rendererGL= (WstRendererGL*)renderer->renderer;
    float zLevel= 1.0;
-   
+
    if ( surface )
    {
       zLevel= surface->zorder;
-      
+
       *z= zLevel;
    }
-   
+
    return zLevel;
 }
 
@@ -2512,7 +2524,7 @@ int renderer_init( WstRenderer *renderer, int argc, char **argv )
 {
    int rc= 0;
    WstRendererGL *rendererGL= 0;
-   
+
    rendererGL= wstRendererGLCreate( renderer );
    if ( rendererGL )
    {
@@ -2537,7 +2549,7 @@ int renderer_init( WstRenderer *renderer, int argc, char **argv )
    }
 
 exit:
-   
+
    return 0;
 }
 
