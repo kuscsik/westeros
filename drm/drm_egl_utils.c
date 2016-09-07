@@ -146,13 +146,17 @@ int egl_helper_init_drm_display(
         return EGL_UTILS_FAILURE;
     }
 
-    if(*fd == 0)
+    if(*fd == 0) {
+        printf("Opening default DRM card  %s\n", DEFAULT_DRM_CARD);
         res_fd = open(DEFAULT_DRM_CARD, O_RDWR);
-    else
+    }
+    else {
+        printf("Using DRM card %x\n", *fd);
         res_fd = *fd;
+    }
 
     if (res_fd < 0){
-        DEBUG_PRINT("ERROR: Failed to open DRM device.\n");
+        printf("ERROR: Failed to open DRM device.\n");
         return EGL_UTILS_FAILURE;
     }
 
@@ -162,16 +166,20 @@ int egl_helper_init_drm_display(
         DEBUG_PRINT("ERROR: Failed get DRM mode resources.\n");
         return EGL_UTILS_FAILURE;
     }
+    DEBUG_PRINT("Number of connectors %d \n", res->count_connectors);
 
-    for (i = 0; i < res->count_connectors; i++)
+    for (int j = 0; j < res->count_connectors; j++)
     {
-        connector = drmModeGetConnector(res_fd, res->connectors[i]);
+        DEBUG_PRINT("Testing connector %d\n", j);
+        connector = drmModeGetConnector(res_fd, res->connectors[j]);
 
         if (!connector)
             continue;
 
-        if (connector->connection == DRM_MODE_CONNECTED && connector->count_modes > 0)
+        if (connector->connection == DRM_MODE_CONNECTED && connector->count_modes > 0) {
+            printf("Found a working connector. Number of modes %d\n", connector->count_modes);
             break;
+        }
 
         drmModeFreeConnector(connector);
     }
@@ -179,6 +187,7 @@ int egl_helper_init_drm_display(
     if (connector != NULL)
     {
         *con = connector;
+        DEBUG_PRINT("Using connector id: %d. Number of modes: %s", connector->connector_id, connector->count_modes);
     }
     else
     {

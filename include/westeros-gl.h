@@ -44,6 +44,10 @@ void WstGLGetNativePixmapDimensions( WstGLCtx *ctx, void *nativePixmap, int *wid
 void WstGLReleaseNativePixmap( WstGLCtx *ctx, void *nativePixmap );
 void* WstGLGetEGLNativePixmap( WstGLCtx *ctx, void *nativePixmap );
 
+#ifdef ENABLE_DRM
+void WstGLSwapBuffers(void* nativeBuffer);
+#endif
+
 #if defined(__cplusplus) && defined(ENABLE_DRM)
 } //extern "C"
 #endif

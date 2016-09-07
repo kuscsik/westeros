@@ -36,14 +36,14 @@
 #include "wayland-egl.h"
 #include "simpleshell-client-protocol.h"
 
-static void registryHandleGlobal(void *data, 
+static void registryHandleGlobal(void *data,
                                  struct wl_registry *registry, uint32_t id,
 		                           const char *interface, uint32_t version);
-static void registryHandleGlobalRemove(void *data, 
+static void registryHandleGlobalRemove(void *data,
                                        struct wl_registry *registry,
 			                              uint32_t name);
 
-static const struct wl_registry_listener registryListener = 
+static const struct wl_registry_listener registryListener =
 {
 	registryHandleGlobal,
 	registryHandleGlobalRemove
@@ -75,7 +75,7 @@ static void shellSurfaceStatus(void *data,
 static void shellGetSurfacesDone(void *data,
                                  struct wl_simple_shell *wl_simple_shell);
 
-static const struct wl_simple_shell_listener shellListener = 
+static const struct wl_simple_shell_listener shellListener =
 {
    shellSurfaceId,
    shellSurfaceCreated,
@@ -117,14 +117,14 @@ typedef struct _AppCtx
    EGLDisplay eglDisplay;
    EGLConfig eglConfig;
    EGLSurface eglSurfaceWindow;
-   EGLContext eglContext;   
+   EGLContext eglContext;
    EGLImageKHR eglImage;
    EGLNativePixmapType eglPixmap;
 
    bool getShell;
    InputState inputState;
    Attribute attribute;
-   
+
    int planeX;
    int planeY;
    int planeWidth;
@@ -134,18 +134,18 @@ typedef struct _AppCtx
    uint32_t surfaceIdCurrent;
    float surfaceOpacity;
    float surfaceZOrder;
-   bool surfaceVisible;   
+   bool surfaceVisible;
    int surfaceX;
    int surfaceY;
    int surfaceWidth;
    int surfaceHeight;
-   
+
    int surfaceDX;
    int surfaceDY;
    int surfaceDWidth;
    int surfaceDHeight;
 
-	struct 
+	struct
 	{
 		GLuint rotation_uniform;
 		GLuint pos;
@@ -178,11 +178,11 @@ static void signalHandler(int signum)
 static long long currentTimeMillis()
 {
    long long timeMillis;
-   struct timeval tv;   
+   struct timeval tv;
 
    gettimeofday(&tv, NULL);
    timeMillis = tv.tv_sec * 1000 + tv.tv_usec / 1000;
-   
+
    return timeMillis;
 }
 
@@ -202,7 +202,7 @@ static void seatCapabilities( void *data, struct wl_seat *seat, uint32_t capabil
 	AppCtx *ctx = (AppCtx*)data;
 
    printf("seat %p caps: %X\n", seat, capabilities );
-   
+
    if ( capabilities & WL_SEAT_CAPABILITY_KEYBOARD )
    {
       printf("  seat has keyboard\n");
@@ -220,7 +220,7 @@ static void seatCapabilities( void *data, struct wl_seat *seat, uint32_t capabil
       printf("  seat has touch\n");
       ctx->touch= wl_seat_get_touch( ctx->seat );
       printf("  touch %p\n", ctx->touch );
-   }   
+   }
 }
 
 static void seatName( void *data, struct wl_seat *seat, const char *name )
@@ -231,10 +231,10 @@ static void seatName( void *data, struct wl_seat *seat, const char *name )
 
 static const struct wl_seat_listener seatListener = {
    seatCapabilities,
-   seatName 
+   seatName
 };
 
-static void registryHandleGlobal(void *data, 
+static void registryHandleGlobal(void *data,
                                  struct wl_registry *registry, uint32_t id,
 		                           const char *interface, uint32_t version)
 {
@@ -252,22 +252,22 @@ static void registryHandleGlobal(void *data,
    else if ( (len==13) && !strncmp(interface, "wl_compositor", len) ) {
       ctx->compositor= (struct wl_compositor*)wl_registry_bind(registry, id, &wl_compositor_interface, 1);
       printf("compositor %p\n", ctx->compositor);
-   } 
+   }
    else if ( (len==7) && !strncmp(interface, "wl_seat", len) ) {
       ctx->seat= (struct wl_seat*)wl_registry_bind(registry, id, &wl_seat_interface, 4);
       printf("seat %p\n", ctx->seat);
 		wl_seat_add_listener(ctx->seat, &seatListener, ctx);
-   } 
+   }
    else if ( (len==15) && !strncmp(interface, "wl_simple_shell", len) ) {
       if ( ctx->getShell ) {
-         ctx->shell= (struct wl_simple_shell*)wl_registry_bind(registry, id, &wl_simple_shell_interface, 1);      
+         ctx->shell= (struct wl_simple_shell*)wl_registry_bind(registry, id, &wl_simple_shell_interface, 1);
          printf("shell %p\n", ctx->shell );
          wl_simple_shell_add_listener(ctx->shell, &shellListener, ctx);
       }
    }
 }
 
-static void registryHandleGlobalRemove(void *data, 
+static void registryHandleGlobalRemove(void *data,
                                        struct wl_registry *registry,
 			                              uint32_t name)
 {
@@ -280,14 +280,14 @@ static void shellSurfaceId(void *data,
 {
 	AppCtx *ctx = (AppCtx*)data;
    char name[32];
-  
+
 	sprintf( name, "westeros-test-surface-%x", surfaceId );
    printf("shell: surface created: %p id %x\n", surface, surfaceId);
 	wl_simple_shell_set_name( ctx->shell, surfaceId, name );
    wl_simple_shell_set_geometry( ctx->shell, surfaceId, ctx->surfaceX, ctx->surfaceY, ctx->surfaceWidth, ctx->surfaceHeight );
 
 }
-                           
+
 static void shellSurfaceCreated(void *data,
                                 struct wl_simple_shell *wl_simple_shell,
                                 uint32_t surfaceId,
@@ -297,7 +297,7 @@ static void shellSurfaceCreated(void *data,
 
    printf("shell: surface created: %x name: %s\n", surfaceId, name);
    ctx->surfaceIdOther= ctx->surfaceIdCurrent;
-   ctx->surfaceIdCurrent= surfaceId;   
+   ctx->surfaceIdCurrent= surfaceId;
    wl_simple_shell_get_status( ctx->shell, ctx->surfaceIdCurrent );
    printf("shell: surfaceCurrent: %x surfaceOther: %x\n", ctx->surfaceIdCurrent, ctx->surfaceIdOther);
 }
@@ -308,9 +308,9 @@ static void shellSurfaceDestroyed(void *data,
                                   const char *name)
 {
 	AppCtx *ctx = (AppCtx*)data;
-	
+
    printf("shell: surface destroyed: %x name: %s\n", surfaceId, name);
-   
+
    if ( ctx->surfaceIdCurrent == surfaceId )
    {
       ctx->surfaceIdCurrent= ctx->surfaceIdOther;
@@ -323,7 +323,7 @@ static void shellSurfaceDestroyed(void *data,
    }
    printf("shell: surfaceCurrent: %x surfaceOther: %x\n", ctx->surfaceIdCurrent, ctx->surfaceIdOther);
 }
-                                  
+
 static void shellSurfaceStatus(void *data,
                                struct wl_simple_shell *wl_simple_shell,
                                uint32_t surfaceId,
@@ -348,51 +348,51 @@ static void shellSurfaceStatus(void *data,
    ctx->surfaceWidth= width;
    ctx->surfaceHeight= height;
    ctx->surfaceOpacity= wl_fixed_to_double(opacity);
-   ctx->surfaceZOrder= wl_fixed_to_double(zorder);   
-}                               
+   ctx->surfaceZOrder= wl_fixed_to_double(zorder);
+}
 
 static void shellGetSurfacesDone(void *data,
                                  struct wl_simple_shell *wl_simple_shell)
 {
 	AppCtx *ctx = (AppCtx*)data;
 	printf("shell: get all surfaces done\n");
-}                                        
+}
 
 #define NON_BLOCKING_ENABLED (0)
 #define NON_BLOCKING_DISABLED (1)
 
-static void setBlockingMode(int blockingState )  
-{  
+static void setBlockingMode(int blockingState )
+{
    struct termios ttystate;
-   int mask, bits;  
- 
+   int mask, bits;
+
    mask= (blockingState == NON_BLOCKING_ENABLED) ? ~(ICANON|ECHO) : -1;
    bits= (blockingState == NON_BLOCKING_ENABLED) ? 0 : (ICANON|ECHO);
 
-   // Obtain the current terminal state and alter the attributes to achieve 
+   // Obtain the current terminal state and alter the attributes to achieve
    // the requested blocking behaviour
-   tcgetattr(STDIN_FILENO, &ttystate);  
+   tcgetattr(STDIN_FILENO, &ttystate);
 
-   ttystate.c_lflag= ((ttystate.c_lflag & mask) | bits);  
- 
-   if (blockingState == NON_BLOCKING_ENABLED)  
-   {  
-       ttystate.c_cc[VMIN]= 1;  
-   }  
+   ttystate.c_lflag= ((ttystate.c_lflag & mask) | bits);
 
-   tcsetattr(STDIN_FILENO, TCSANOW, &ttystate);   
+   if (blockingState == NON_BLOCKING_ENABLED)
+   {
+       ttystate.c_cc[VMIN]= 1;
+   }
+
+   tcsetattr(STDIN_FILENO, TCSANOW, &ttystate);
 }
 
-static int kbhit()  
-{  
-   struct timeval tv;  
-   fd_set fds;  
-   tv.tv_sec = 0;  
-   tv.tv_usec = 0;  
-   FD_ZERO(&fds);  
-   FD_SET(STDIN_FILENO, &fds); //STDIN_FILENO is 0  
-   select(STDIN_FILENO+1, &fds, NULL, NULL, &tv);  
-   return FD_ISSET(STDIN_FILENO, &fds);  
+static int kbhit()
+{
+   struct timeval tv;
+   fd_set fds;
+   tv.tv_sec = 0;
+   tv.tv_usec = 0;
+   FD_ZERO(&fds);
+   FD_SET(STDIN_FILENO, &fds); //STDIN_FILENO is 0
+   select(STDIN_FILENO+1, &fds, NULL, NULL, &tv);
+   return FD_ISSET(STDIN_FILENO, &fds);
 }
 
 static void adjustAttribute( AppCtx *ctx, int c )
@@ -625,16 +625,16 @@ static void drawFrame( AppCtx *ctx )
       ctx->surfaceY += ctx->surfaceDY;
       ctx->surfaceWidth += ctx->surfaceDWidth;
       ctx->surfaceHeight += ctx->surfaceDHeight;
-      
-      wl_simple_shell_set_geometry( ctx->shell, ctx->surfaceIdCurrent, 
+
+      wl_simple_shell_set_geometry( ctx->shell, ctx->surfaceIdCurrent,
                                     ctx->surfaceX, ctx->surfaceY, ctx->surfaceWidth, ctx->surfaceHeight );
    }
-   
+
    renderGL(ctx);
-   
+
    ctx->frameCallback= wl_surface_frame( ctx->surface );
    wl_callback_add_listener( ctx->frameCallback, &frameListener, ctx );
-   
+
    eglSwapBuffers(ctx->eglDisplay, ctx->eglSurfaceWindow);
 }
 
@@ -700,7 +700,7 @@ int main( int argc, char** argv)
    }
 
    ctx.startTime= currentTimeMillis();
-   
+
    if ( display_name )
    {
       printf("calling wl_display_connect for display name %s\n", display_name);
@@ -735,9 +735,9 @@ int main( int argc, char** argv)
    ctx.planeWidth= 1280;
    ctx.planeHeight= 720;
    wl_registry_add_listener(registry, &registryListener, &ctx);
-   
+   printf("Doing display round trip\n");
    wl_display_roundtrip(ctx.display);
-   
+   printf("setting up egl\n");
    setupEGL(&ctx);
 
    ctx.surfaceWidth= 640;
@@ -746,14 +746,14 @@ int main( int argc, char** argv)
    ctx.surfaceY= 0;
 
    createSurface(&ctx);
-   
+
    setupGL(&ctx);
-   
+
    if ( paceRendering )
    {
       drawFrame(&ctx);
    }
-  
+
 	sigint.sa_handler = signalHandler;
 	sigemptyset(&sigint.sa_mask);
 	sigint.sa_flags = SA_RESETHAND;
@@ -763,10 +763,11 @@ int main( int argc, char** argv)
 
    ctx.inputState= InputState_main;
    ctx.attribute= Attribute_position;
-   
+
    g_running= 1;
    while( g_running )
    {
+      printf("Drawing\n");
       if ( wl_display_dispatch( ctx.display ) == -1 )
       {
          break;
@@ -776,7 +777,7 @@ int main( int argc, char** argv)
       {
          usleep(delay);
       }
-      
+
       if ( !paceRendering )
       {
          renderGL(&ctx);
@@ -789,12 +790,12 @@ int main( int argc, char** argv)
       }
 
       if ( ctx.getShell )
-      {      
+      {
          if ( kbhit() )
          {
             int c= fgetc(stdin);
             processInput(&ctx, c);
-            
+
             // Prevent keys from building up while held down
             tcflush(STDIN_FILENO,TCIFLUSH);
          }
@@ -803,46 +804,46 @@ int main( int argc, char** argv)
             if ( ctx.surfaceDX || ctx.surfaceDY || ctx.surfaceDWidth || ctx.surfaceDHeight )
             {
               // Key has been released - reset deltas
-              ctx.surfaceDX= ctx.surfaceDY= ctx.surfaceDWidth= ctx.surfaceDHeight= 0;         
+              ctx.surfaceDX= ctx.surfaceDY= ctx.surfaceDWidth= ctx.surfaceDHeight= 0;
             }
          }
       }
-   }   
+   }
 
 exit:
 
    printf("westeros_test: exiting...\n");
 
    setBlockingMode(NON_BLOCKING_DISABLED);
-   
+
    if ( ctx.compositor )
    {
       wl_compositor_destroy( ctx.compositor );
       ctx.compositor= 0;
    }
-   
+
    if ( ctx.shell )
    {
       wl_simple_shell_destroy( ctx.shell );
       ctx.shell= 0;
    }
-   
+
    termEGL(&ctx);
- 
+
    if ( registry )
    {
       wl_registry_destroy(registry);
       registry= 0;
    }
-   
+
    if ( display )
    {
       wl_display_disconnect(display);
       display= 0;
    }
-   
+
    printf("westeros_test: exit\n");
-      
+
    return nRC;
 }
 
@@ -874,7 +875,7 @@ static bool setupEGL( AppCtx *ctx )
       printf("error: EGL not available\n" );
       goto exit;
    }
-    
+
    /*
     * Initialize display
     */
@@ -885,7 +886,7 @@ static bool setupEGL( AppCtx *ctx )
       goto exit;
    }
    printf("eglInitiialize: major: %d minor: %d\n", major, minor );
-    
+
    /*
     * Get number of available configurations
     */
@@ -896,14 +897,14 @@ static bool setupEGL( AppCtx *ctx )
       goto exit;
    }
    printf("Number of EGL configurations: %d\n", configCount );
-    
+
    eglConfigs= (EGLConfig*)malloc( configCount*sizeof(EGLConfig) );
    if ( !eglConfigs )
    {
       printf("error: unable to alloc memory for EGL configurations\n");
       goto exit;
    }
-    
+
    i= 0;
    attr[i++]= EGL_RED_SIZE;
    attr[i++]= RED_SIZE;
@@ -920,7 +921,7 @@ static bool setupEGL( AppCtx *ctx )
    attr[i++]= EGL_RENDERABLE_TYPE;
    attr[i++]= EGL_OPENGL_ES2_BIT;
    attr[i++]= EGL_NONE;
-    
+
    /*
     * Get a list of configurations that meet or exceed our requirements
     */
@@ -931,7 +932,7 @@ static bool setupEGL( AppCtx *ctx )
       goto exit;
    }
    printf("eglChooseConfig: matching configurations: %d\n", configCount );
-    
+
    /*
     * Choose a suitable configuration
     */
@@ -955,17 +956,19 @@ static bool setupEGL( AppCtx *ctx )
          break;
       }
    }
+   /*
    if ( i == configCount )
    {
       printf("error: no suitable configuration available\n");
       goto exit;
-   }
+   }*/
+   i = 0 ;
    ctx->eglConfig= eglConfigs[i];
 
    ctxAttrib[0]= EGL_CONTEXT_CLIENT_VERSION;
    ctxAttrib[1]= 2; // ES2
    ctxAttrib[2]= EGL_NONE;
-    
+
    /*
     * Create an EGL context
     */
@@ -978,7 +981,7 @@ static bool setupEGL( AppCtx *ctx )
    printf("eglCreateContext: eglContext %p\n", ctx->eglContext );
 
    result= true;
-    
+
 exit:
 
    if ( eglConfigs )
@@ -987,7 +990,7 @@ exit:
       eglConfigs= 0;
    }
 
-   return result;       
+   return result;
 }
 
 static void termEGL( AppCtx *ctx )
@@ -995,9 +998,9 @@ static void termEGL( AppCtx *ctx )
    if ( ctx->display )
    {
       eglMakeCurrent( ctx->eglDisplay, EGL_NO_SURFACE, EGL_NO_SURFACE, EGL_NO_CONTEXT );
-      
+
       destroySurface( ctx );
-      
+
       eglTerminate( ctx->eglDisplay );
       eglReleaseThread();
    }
@@ -1009,7 +1012,7 @@ static bool createSurface( AppCtx *ctx )
    EGLBoolean b;
 
    ctx->surface= wl_compositor_create_surface(ctx->compositor);
-   printf("surface=%p\n", ctx->surface);   
+   printf("surface=%p\n", ctx->surface);
    if ( !ctx->surface )
    {
       printf("error: unable to create wayland surface\n");
@@ -1023,7 +1026,7 @@ static bool createSurface( AppCtx *ctx )
       goto exit;
    }
    printf("wl_egl_window %p\n", ctx->native);
-   
+
    /*
     * Create a window surface
     */
@@ -1044,7 +1047,7 @@ static bool createSurface( AppCtx *ctx )
          goto exit;
       }
    }
-   printf("eglCreateWindowSurface: eglSurfaceWindow %p\n", ctx->eglSurfaceWindow );                                         
+   printf("eglCreateWindowSurface: eglSurfaceWindow %p\n", ctx->eglSurfaceWindow );
 
    /*
     * Establish EGL context for this thread
@@ -1055,7 +1058,7 @@ static bool createSurface( AppCtx *ctx )
       printf("error: eglMakeCurrent failed: %X\n", eglGetError() );
       goto exit;
    }
-    
+
    eglSwapInterval( ctx->eglDisplay, 1 );
 
 exit:
@@ -1068,8 +1071,8 @@ static void destroySurface( AppCtx *ctx )
    if ( ctx->eglSurfaceWindow )
    {
       eglDestroySurface( ctx->eglDisplay, ctx->eglSurfaceWindow );
-      
-      wl_egl_window_destroy( ctx->native );   
+
+      wl_egl_window_destroy( ctx->native );
    }
    if ( ctx->surface )
    {
@@ -1106,7 +1109,7 @@ static GLuint createShader(AppCtx *ctx, GLenum shaderType, const char *shaderSou
    GLint shaderStatus;
    GLsizei length;
    char logText[1000];
-   
+
    shader= glCreateShader( shaderType );
    if ( shader )
    {
@@ -1122,7 +1125,7 @@ static GLuint createShader(AppCtx *ctx, GLenum shaderType, const char *shaderSou
                 logText );
       }
    }
-   
+
    return shader;
 }
 
@@ -1142,7 +1145,7 @@ static bool setupGL( AppCtx *ctx )
 	glLinkProgram(program);
 
 	glGetProgramiv(program, GL_LINK_STATUS, &status);
-	if (!status) 
+	if (!status)
 	{
 		char log[1000];
 		GLsizei len;
@@ -1161,9 +1164,9 @@ static bool setupGL( AppCtx *ctx )
 	glLinkProgram(program);
 
 	ctx->gl.rotation_uniform= glGetUniformLocation(program, "rotation");
-		
+
 exit:
-   return result;		
+   return result;
 }
 
 static bool renderGL( AppCtx *ctx )
@@ -1211,7 +1214,7 @@ static bool renderGL( AppCtx *ctx )
 
    glDisableVertexAttribArray(ctx->gl.pos);
    glDisableVertexAttribArray(ctx->gl.col);
-   
+
    GLenum err= glGetError();
    if ( err != GL_NO_ERROR )
    {
