@@ -955,17 +955,23 @@ static bool setupEGL( AppCtx *ctx )
          break;
       }
    }
-   if ( i == configCount )
-   {
-      printf("error: no suitable configuration available\n");
-      goto exit;
-   }
-   ctx->eglConfig= eglConfigs[i];
+   
+   if(i == configCount){
+        /**
+         * The above configuration selection above requres DEPTH value 0, which is
+         * OK to return by EGL, but some platforms actaully return a valid depth (non-zero).
+         * In this case just select the first config, which is working in almost all cases.
+         */
+       printf("Westeros config detection failed. Using first config.\n");
+       ctx->eglConfig= eglConfigs[0];
+    } else {
+       ctx->eglConfig= eglConfigs[i];
+    }
 
    ctxAttrib[0]= EGL_CONTEXT_CLIENT_VERSION;
    ctxAttrib[1]= 2; // ES2
    ctxAttrib[2]= EGL_NONE;
-    
+
    /*
     * Create an EGL context
     */

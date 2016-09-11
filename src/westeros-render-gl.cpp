@@ -1511,18 +1511,23 @@ static bool wstRenderGLSetupEGL( WstRendererGL *renderer )
          break;
       }
    }
-   if ( i == configCount )
-   {
-      printf("wstRendererGLSetupEGL: no suitable configuration available\n");
-      goto exit;
-   }
-   renderer->eglConfig= eglConfigs[i];
 
+   if(i == configCount){
+        /**
+         * The above configuration selection above requres DEPTH value 0, which is
+         * OK to return by EGL, but some platforms actaully return a valid depth (non-zero).
+         * In this case just select the first config, which is working in almost all cases.
+         */
+       printf("Westeros config detection failed. Using first config.\n");
+       renderer->eglConfig= eglConfigs[0];
+    } else {
+        renderer->eglConfig= eglConfigs[i];
+    }
    // If we are doing nested composition, create a wayland egl window otherwise
    // create a native egl window.
    if ( renderer->renderer->displayNested )
    {
-      renderer->nativeWindow= wl_egl_window_create(renderer->renderer->surfaceNested, renderer->outputWidth, renderer->outputHeight);         
+      renderer->nativeWindow= wl_egl_window_create(renderer->renderer->surfaceNested, renderer->outputWidth, renderer->outputHeight);
    }
    #if defined (WESTEROS_PLATFORM_EMBEDDED)
    else
@@ -2293,13 +2298,23 @@ static void wstRendererUpdateScene( WstRenderer *renderer )
          wstRenderGLRenderSurface( rendererGL, rctx, surface );
       }
    }
- 
+
    glFlush();
    glFinish();
 
    #if defined (WESTEROS_PLATFORM_EMBEDDED) || defined (WESTEROS_HAVE_WAYLAND_EGL)
    eglSwapBuffers(rendererGL->eglDisplay, rendererGL->eglSurface);
    #endif
+
+#if defined (ENABLE_DRM)
+   /**
+    *  DRM needs extra step for assigning the buffer to a given overlay.
+    *  This allows the assignment of the buffer to different overlays or use
+    *  double-triple buffering on the output.
+    */
+   WstGLSwapBuffers(rendererGL->nativeWindow);
+#endif
+
 }
 
 static WstRenderSurface* wstRendererSurfaceCreate( WstRenderer *renderer )
@@ -2308,7 +2323,7 @@ static WstRenderSurface* wstRendererSurfaceCreate( WstRenderer *renderer )
    WstRendererGL *rendererGL= (WstRendererGL*)renderer->renderer;
 
    surface= wstRenderGLCreateSurface(rendererGL);
-   
+
    std::vector<WstRenderSurface*>::iterator it= rendererGL->surfaces.begin();
    while ( it != rendererGL->surfaces.end() )
    {
@@ -2319,25 +2334,25 @@ static WstRenderSurface* wstRendererSurfaceCreate( WstRenderer *renderer )
       ++it;
    }
    rendererGL->surfaces.insert(it,surface);
-   
-   return surface; 
+
+   return surface;
 }
 
 static void wstRendererSurfaceDestroy( WstRenderer *renderer, WstRenderSurface *surface )
 {
    WstRendererGL *rendererGL= (WstRendererGL*)renderer->renderer;
 
-   for ( std::vector<WstRenderSurface*>::iterator it= rendererGL->surfaces.begin(); 
+   for ( std::vector<WstRenderSurface*>::iterator it= rendererGL->surfaces.begin();
          it != rendererGL->surfaces.end();
          ++it )
    {
       if ( (*it) == surface )
       {
          rendererGL->surfaces.erase(it);
-         break;   
+         break;
       }
-   }   
-   
+   }
+
    wstRenderGLDestroySurface( rendererGL, surface );
 }
 
